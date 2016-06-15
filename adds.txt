@@ -1,0 +1,3 @@
+.Encontrar la fuente de la señal
+.Conocer la direccion de donde proviene la señal -> Combinando el sensor acelerometro para conocer 
+la direccion hacia donde nos movemos y junto con la intensidad de la señal realizar los calculos correspondientes.
