@@ -9,10 +9,9 @@ public class Contacto {
     private String apellido;
     private String numCel;
 
-    public Contacto(int fotoPerfil, String nombre, String apellido, String numCel){
+    public Contacto(int fotoPerfil, String nombre, String numCel){
         this.fotoPerfil = fotoPerfil;
         this.nombre = nombre;
-        this.apellido = apellido;
         this.numCel = numCel;
     }
 
@@ -22,10 +21,6 @@ public class Contacto {
 
     public String getNombre() {
         return nombre;
-    }
-
-    public String getApellido() {
-        return apellido;
     }
 
     public String getNumCel() {

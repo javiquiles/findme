@@ -1,11 +1,18 @@
 package com.example.hernan.findme.SQLite;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.ContactsContract;
 import android.support.v4.app.ActivityCompat;
+
+import com.example.hernan.findme.Contacto;
+import com.example.hernan.findme.R;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Hernan on 13/7/2016.
@@ -14,13 +21,22 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     private String name = "FindMe";
     private int version = 1;
     private Context context;
+    private static SQLiteHelper sqLiteHelper = null;
 
-    private String contactos = "CREATE TABLE contactos(idContacto INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, apellido TEXT, numCelular TEXT, fotoPerfil INTEGER, activo BOOLEAN)";
+    private String contactos = "CREATE TABLE contactos(idContacto INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, numCelular TEXT, fotoPerfil INTEGER, activo BOOLEAN)";
 
-    public SQLiteHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
+    private SQLiteHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
         this.context = context;
     }
+
+    public static SQLiteHelper getDatabase(Context context){
+        if(sqLiteHelper == null)
+            sqLiteHelper = new SQLiteHelper(context, "FindMe", null, 2);
+        return sqLiteHelper;
+    }
+
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -33,36 +49,64 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     }
 
-    public void init(SQLiteDatabase db){
+    public void init(){
+        SQLiteDatabase db = getReadableDatabase();
+        ContentValues[] contactos = importarContactos();
+
+        for (ContentValues aux : contactos) {
+            db.insert("contactos", null, aux);
+        }
+
+    }
+
+    public ContentValues[] importarContactos(){
 
         String[] projection = new String[]{
-                        ContactsContract.Contacts.Data._ID,
-                        ContactsContract.Contacts.Data.MIMETYPE,
-                        ContactsContract.Contacts.Data.DATA1,
-                        ContactsContract.Contacts.Data.DATA2,
-                        ContactsContract.Contacts.Data.DATA3,
-                        ContactsContract.Contacts.Data.DATA4,
-                        ContactsContract.Contacts.Data.DATA5,
-                        ContactsContract.Contacts.Data.DATA6,
-                        ContactsContract.Contacts.Data.DATA7,
-                        ContactsContract.Contacts.Data.DATA8,
-                        ContactsContract.Contacts.Data.DATA9,
-                        ContactsContract.Contacts.Data.DATA10,
-                        ContactsContract.Contacts.Data.DATA11,
-                        ContactsContract.Contacts.Data.DATA12,
-                        ContactsContract.Contacts.Data.DATA13,
-                        ContactsContract.Contacts.Data.DATA14,
-                        ContactsContract.Contacts.Data.DATA15
-                };
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+        };
 
-        String selectionClause = ContactsContract.Contacts.LOOKUP_KEY+" = ? ";
+        String selectionClause = ContactsContract.Data.MIMETYPE + "='" + ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE + "' AND "
+                + ContactsContract.CommonDataKinds.Phone.NUMBER + " IS NOT NULL";
 
-        Cursor contactsCursor = context.getContentResolver().query(
-                ContactsContract.Contacts.CONTENT_URI,   // URI de contenido para los contactos
-                projection,                        // Columnas a seleccionar
-                selectionClause,                   // Condición del WHERE
-                null,                     // Valores de la condición
-                ContactsContract.Contacts.Data.MIMETYPE);
+        Cursor contactsCursor = this.context.getContentResolver().query(
+                ContactsContract.Data.CONTENT_URI,
+                projection,
+                selectionClause,
+                null,
+                ContactsContract.Data.DISPLAY_NAME + " ASC");
 
+        int nombre = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+        int tel = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+
+        ContentValues[] contactoss = new ContentValues[contactsCursor.getCount()];
+        int i = 0;
+        if(contactsCursor.moveToFirst()){
+            while(contactsCursor.moveToNext()){
+
+                contactoss[i].put("nombre", contactsCursor.getString(nombre));
+                contactoss[i].put("numCelular", contactsCursor.getString(tel));
+                i++;
+
+            }
+        }
+
+        return contactoss;
+    }
+
+    public List<Contacto> getContactos(){
+        SQLiteDatabase db = getReadableDatabase();
+        List<Contacto> contactos = new LinkedList<>();
+        Cursor c;
+
+        if(db != null){
+            c = db.rawQuery("SELECT * FROM contactos", null);
+            if(c.moveToFirst()){
+                while(c.moveToNext()){
+                    contactos.add(new Contacto(R.drawable.forma_circular, c.getString(c.getColumnIndex("nombre")), c.getString(c.getColumnIndex("numCelular"))));
+                }
+            }
+        }
+        return contactos;
     }
 }

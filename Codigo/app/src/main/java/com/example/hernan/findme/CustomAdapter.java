@@ -48,7 +48,7 @@ public class CustomAdapter extends BaseAdapter{
         MyViewHolder Holder = new MyViewHolder(convertView);
 
         Holder.fotoPerfil.setImageResource(lista.get(position).getFotoPerfil());
-        Holder.nombreCompleto.setText(lista.get(position).getNombre() + " " + lista.get(position).getApellido());
+        Holder.nombreCompleto.setText(lista.get(position).getNombre());
 
         return convertView;
     }
