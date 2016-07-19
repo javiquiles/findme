@@ -27,11 +27,13 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     private SQLiteHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
         this.context = context;
+        getReadableDatabase().execSQL("DROP TABLE IF EXISTS contactos");
+        getReadableDatabase().execSQL(contactos);
     }
 
     public static SQLiteHelper getDatabase(Context context){
         if(sqLiteHelper == null)
-            sqLiteHelper = new SQLiteHelper(context, "FindMe", null, 2);
+            sqLiteHelper = new SQLiteHelper(context, "FindMe", null, 7);
         return sqLiteHelper;
     }
 
@@ -45,20 +47,20 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS contactos");
-
+        db.execSQL(contactos);
     }
 
     public void init(){
         SQLiteDatabase db = getReadableDatabase();
-        ContentValues[] contactos = importarContactos();
+        List<ContentValues> contactos = importarContactos();
 
-        //for (ContentValues aux : contactos) {
-        //    db.insert("contactos", null, aux);
-        //}
+        for (ContentValues aux : contactos) {
+            db.insert("contactos", null, aux);
+        }
 
     }
 
-    public ContentValues[] importarContactos(){
+    public List<ContentValues> importarContactos(){
 
         String[] projection = new String[]{
                 ContactsContract.Data.DISPLAY_NAME,
@@ -78,19 +80,20 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         int nombre = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
         int tel = contactsCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
 
-        ContentValues[] contactoss = new ContentValues[contactsCursor.getCount()];
-        int i = 0;
+        List<ContentValues> contactos = new LinkedList<>();
+
         if(contactsCursor.moveToFirst()){
-            while(contactsCursor.moveToNext()){
+            do{
 
-                contactoss[i].put("nombre", contactsCursor.getString(0));
-                contactoss[i].put("numCelular", contactsCursor.getString(1));
-                i++;
+                ContentValues contentValues = new ContentValues();
+                contentValues.put("nombre", contactsCursor.getString(nombre));
+                contentValues.put("numCelular", contactsCursor.getString(tel));
+                contactos.add(contentValues);
 
-            }
+            }while(contactsCursor.moveToNext());
         }
 
-        return contactoss;
+        return contactos;
     }
 
     public List<Contacto> getContactos(){
@@ -101,9 +104,9 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         if(db != null){
             c = db.rawQuery("SELECT * FROM contactos", null);
             if(c.moveToFirst()){
-                while(c.moveToNext()){
+                do{
                     contactos.add(new Contacto(R.drawable.forma_circular, c.getString(c.getColumnIndex("nombre")), c.getString(c.getColumnIndex("numCelular"))));
-                }
+                }while(c.moveToNext());
             }
         }
         return contactos;
